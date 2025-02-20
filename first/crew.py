@@ -1,11 +1,8 @@
-try:
-    from crewai import Agent, Crew, Process, Task
-    from crewai import CrewAI as CrewBase
-    from crewai import agent, crew, task
-except ImportError:
-    # Fallback for local development
-    from .crewai_core import Agent, Crew, Process, Task
-    from crewai.project import CrewBase, agent, crew, task
+# src/first/crew.py
+from crewai import Agent, Crew, Process, Task
+from crewai.project import CrewBase, agent, crew, task
+# Hum external tools (jaise SerperDevTool) remove kar dete hain taake koi external search na ho.
+# from crewai_tools import SerperDevTo
 
 @CrewBase
 class PersonalAIAssistantCrew():
