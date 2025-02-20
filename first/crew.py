@@ -1,8 +1,10 @@
 # src/first/crew.py
-from crewai import Agent, Crew, Process, Task
-from crewai.project import CrewBase, agent, crew, task
-# Hum external tools (jaise SerperDevTool) remove kar dete hain taake koi external search na ho.
-# from crewai_tools import SerperDevTool
+try:
+    from crewai import Agent, Crew, Process, Task
+    from crewai.project import CrewBase, agent, crew, task
+except ImportError as e:
+    print(f"Error importing CrewAI: {e}")
+    # You might want to add a fallback mechanism here
 
 @CrewBase
 class PersonalAIAssistantCrew():
@@ -13,7 +15,6 @@ class PersonalAIAssistantCrew():
         return Agent(
             config=self.agents_config['researcher'],
             verbose=True,
-            # tools ki jagah koi external tool nahi lagana, taake sirf personal info use ho.
         )
 
     @agent
@@ -40,8 +41,8 @@ class PersonalAIAssistantCrew():
     def crew(self) -> Crew:
         """Creates the Personal AI Assistant Crew"""
         return Crew(
-            agents=self.agents,   # Automatically created by the @agent decorator
-            tasks=self.tasks,     # Automatically created by the @task decorator
+            agents=self.agents,
+            tasks=self.tasks,
             process=Process.sequential,
             verbose=True,
         )
