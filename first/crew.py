@@ -11,7 +11,7 @@ except ImportError as e:
 @CrewBase
 class PersonalAIAssistantCrew():
     """Personal AI Assistant Crew for Hassan RJ"""
-    config_path = "/first/config/tasks.yaml"  # Add this line
+    config_path = "first/config/tasks.yaml"  # Add this line
     @agent
     def researcher(self) -> Agent:
         return Agent(
