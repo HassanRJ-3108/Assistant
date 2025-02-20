@@ -1,0 +1,15 @@
+research_task:
+  description: >
+    Analyze the user query ({user_query}) and retrieve only the relevant information from the personal data. If the query is about Hassan RJ, provide a brief and accurate summary. If it is coding-related, generate the necessary solution. Otherwise, answer the query succinctly.
+  expected_output: >
+    A concise, to-the-point response that directly addresses the user's query without extraneous details. Include code snippets only if the query is coding related.
+  agent: researcher
+
+reporting_task:
+  description: >
+    Analyze the user query ({user_query}) and retrieve only the relevant information from the personal data. If the query is about Hassan RJ, provide a brief and accurate summary. If it is coding-related, generate the necessary solution. Otherwise, answer the query succinctly.
+    Format the solution provided by the researcher into a professional and structured final response.
+  expected_output: >
+    A well-organized final answer that is clear, concise, and directly addresses the user's question.
+  agent: reporting_analyst
+  output_file: response.txt
