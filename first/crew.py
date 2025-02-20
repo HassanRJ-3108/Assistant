@@ -2,45 +2,10 @@ try:
     from crewai import Agent, Crew, Process, Task
     from crewai import CrewAI as CrewBase
     from crewai import agent, crew, task
-except ImportError as e:
-    print(f"Import error: {e}")
-    # Fallback to basic implementation
-    from dataclasses import dataclass
-    
-    @dataclass
-    class Agent:
-        config: dict
-        verbose: bool = False
-    
-    @dataclass
-    class Task:
-        config: dict
-        output_file: str = None
-    
-    class Process:
-        sequential = "sequential"
-    
-    @dataclass
-    class Crew:
-        agents: list
-        tasks: list
-        process: str
-        verbose: bool = False
-        
-        def kickoff(self, inputs):
-            return f"Processing query: {inputs.get('user_query', '')}"
-            
-    class CrewBase:
-        pass
-        
-    def agent(func):
-        return func
-        
-    def task(func):
-        return func
-        
-    def crew(func):
-        return func
+except ImportError:
+    # Fallback for local development
+    from .crewai_core import Agent, Crew, Process, Task
+    from crewai.project import CrewBase, agent, crew, task
 
 @CrewBase
 class PersonalAIAssistantCrew():
@@ -51,6 +16,7 @@ class PersonalAIAssistantCrew():
         return Agent(
             config=self.agents_config['researcher'],
             verbose=True,
+            # tools ki jagah koi external tool nahi lagana, taake sirf personal info use ho.
         )
 
     @agent
