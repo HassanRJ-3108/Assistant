@@ -1,8 +1,8 @@
-streamlit
-python-dotenv
-crewai
-chromadb
-pysqlite3-binary
-langchain
-openai
-tiktoken
+streamlit==1.42.1
+python-dotenv==1.0.1
+crewai==0.11.0
+chromadb==0.4.15
+pysqlite3-binary==0.5.4
+langchain==0.0.350
+openai==1.6.1
+tiktoken==0.5.2
