@@ -21,6 +21,15 @@ if not os.getenv("OPENAI_API_KEY"):
 # Optional: Suppress specific warnings
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
 
+try:
+    from first.crew import PersonalAIAssistantCrew
+except ImportError as e:
+    if "pkg_resources" in str(e):
+        st.error("Error importing pkg_resources. This might be due to a deployment issue. Please check your requirements.txt and ensure setuptools is installed.")
+    else:
+        st.error(f"Module not found: {e}. Ensure that 'crew.py' is inside the 'first' folder and __init__.py exists there. 🚫")
+    st.stop()
+
 # --- Import the PersonalAIAssistantCrew from the 'first' folder ---
 try:
     from first.crew import PersonalAIAssistantCrew
