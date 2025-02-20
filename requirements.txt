@@ -1,4 +1,7 @@
-streamlit
-python-dotenv
-litellm
-crewai
+streamlit==1.29.0
+python-dotenv==1.0.0
+crewai==0.11.0
+chromadb==0.4.22
+pysqlite3-binary
+langchain==0.1.0
+openai==1.6.1
