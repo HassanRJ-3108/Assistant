@@ -1,7 +1,5 @@
 # src/first/crew.py
-from .crewai_core import Agent, Crew, Process, Task
-
-
+from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 # Hum external tools (jaise SerperDevTool) remove kar dete hain taake koi external search na ho.
 # from crewai_tools import SerperDevTool
