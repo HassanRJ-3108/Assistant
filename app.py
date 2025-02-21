@@ -4,9 +4,7 @@ import json
 from datetime import datetime
 import streamlit as st
 from dotenv import load_dotenv
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
+import sqlite3
 
 # --- Load environment variables ---
 load_dotenv()
@@ -32,43 +30,56 @@ except ImportError as e:
         st.error(f"Module not found: {e}. Ensure that 'crew.py' is inside the 'first' folder and __init__.py exists there. 🚫")
     st.stop()
 
-def load_and_vectorize_personal_data(filename="first/knowledge/user_preference.txt"):
+def create_database():
+    conn = sqlite3.connect('hassan_data.db')
+    c = conn.cursor()
+    c.execute('''CREATE VIRTUAL TABLE IF NOT EXISTS hassan_info 
+                 USING fts5(content, tokenize='porter')''')
+    conn.commit()
+    conn.close()
+
+def load_and_index_personal_data(filename="first/knowledge/user_preference.txt"):
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(base_dir, filename)
         with open(file_path, "r", encoding="utf-8") as f:
             personal_data = f.read().strip()
         
-        # Split the data into sentences
-        sentences = personal_data.split('\n')
+        # Create database and table if not exists
+        create_database()
         
-        # Vectorize the sentences using TF-IDF
-        vectorizer = TfidfVectorizer()
-        tfidf_matrix = vectorizer.fit_transform(sentences)
+        # Insert data into the database
+        conn = sqlite3.connect('hassan_data.db')
+        c = conn.cursor()
+        c.execute("DELETE FROM hassan_info")  # Clear existing data
+        for line in personal_data.split('\n'):
+            c.execute("INSERT INTO hassan_info (content) VALUES (?)", (line,))
+        conn.commit()
+        conn.close()
         
-        st.success("Personal data loaded and vectorized successfully! 😊")
-        st.write(f"Number of sentences vectorized: {len(sentences)}")
-        return personal_data, vectorizer, tfidf_matrix, sentences
+        st.success("Personal data loaded and indexed successfully! 😊")
+        return personal_data
     except Exception as e:
-        st.error(f"Error reading or vectorizing personal data: {e} 🚫")
-        return None, None, None, None
+        st.error(f"Error reading or indexing personal data: {e} 🚫")
+        return None
 
-def process_query(personal_data, user_query, vectorizer, tfidf_matrix, sentences):
-    if not personal_data or vectorizer is None or tfidf_matrix is None:
-        st.error("Personal data or vectorization components are missing.")
+def search_personal_data(query):
+    conn = sqlite3.connect('hassan_data.db')
+    c = conn.cursor()
+    c.execute("SELECT content FROM hassan_info WHERE content MATCH ? ORDER BY rank LIMIT 5", (query,))
+    results = c.fetchall()
+    conn.close()
+    return [result[0] for result in results]
+
+def process_query(personal_data, user_query):
+    if not personal_data:
+        st.error("Personal data is empty. Please update the file.")
         return None
     
     try:
-        # Vectorize the user query
-        query_vector = vectorizer.transform([user_query])
-        
-        # Compute cosine similarities
-        cosine_similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()
-        
-        # Get top 5 most similar sentences
-        top_indices = cosine_similarities.argsort()[-5:][::-1]
-        relevant_sentences = [sentences[i] for i in top_indices]
-        relevant_context = "\n".join(relevant_sentences)
+        # Search for relevant information
+        relevant_info = search_personal_data(user_query)
+        relevant_context = "\n".join(relevant_info)
         
         crew = PersonalAIAssistantCrew().crew()
         inputs = {
@@ -124,7 +135,7 @@ def main():
     st.sidebar.title("Navigation")
     app_mode = st.sidebar.selectbox("Choose the app mode", ["Ask Query", "Train Model"])
     
-    personal_data, vectorizer, tfidf_matrix, sentences = load_and_vectorize_personal_data()
+    personal_data = load_and_index_personal_data()
     
     if app_mode == "Ask Query":
         st.header("Ask a Question about Hassan RJ")
@@ -134,7 +145,7 @@ def main():
                 st.error("Please enter a question.")
             else:
                 with st.spinner("Processing query..."):
-                    result = process_query(personal_data, user_query, vectorizer, tfidf_matrix, sentences)
+                    result = process_query(personal_data, user_query)
                 if result is not None:
                     st.subheader("AI Assistant's Response:")
                     try:
