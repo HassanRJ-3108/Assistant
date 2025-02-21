@@ -4,6 +4,14 @@ import json
 from datetime import datetime
 import streamlit as st
 from dotenv import load_dotenv
+from pydantic import ValidationError
+
+import sys
+import subprocess
+
+subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "setuptools"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "wheel"])
 
 # --- Load environment variables ---
 load_dotenv()  # Loads .env from the current directory
@@ -57,26 +65,25 @@ def load_personal_data(filename="first/knowledge/user_preference.txt"):
 
 # --- Function to process user queries ---
 def process_query(personal_data, user_query):
-    """
-    Process a user query using the PersonalAIAssistantCrew.
-    """
     if not personal_data:
         st.error("Personal data is empty. Please update the file.")
         return None
     
-    # Initialize the crew and prepare inputs
-    crew = PersonalAIAssistantCrew().crew()
-    inputs = {
-        "topic": "Hassan RJ",
-        "current_year": str(datetime.now().year),
-        "personal_data": personal_data,
-        "user_query": user_query
-    }
     try:
+        crew = PersonalAIAssistantCrew().crew()
+        inputs = {
+            "topic": "Hassan RJ",
+            "current_year": str(datetime.now().year),
+            "personal_data": personal_data,
+            "user_query": user_query
+        }
         result = crew.kickoff(inputs=inputs)
         return result
+    except ValidationError as e:
+        st.error(f"Validation error: {str(e)}")
+        return None
     except Exception as e:
-        st.error(f"An error occurred while processing your query: {e} 🚫")
+        st.error(f"An error occurred while processing your query: {str(e)} 🚫")
         return None
 
 # --- Function to train the model ---
