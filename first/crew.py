@@ -20,6 +20,9 @@ class PersonalAIAssistantCrew():
             asyncio.get_event_loop()
         except RuntimeError:
             asyncio.set_event_loop(asyncio.new_event_loop())
+        
+        # Initialize LLM once
+        self.llm = self.get_llm()
 
     def get_llm(self):
         return ChatGoogleGenerativeAI(
@@ -32,7 +35,7 @@ class PersonalAIAssistantCrew():
     def researcher(self) -> Agent:
         config = self.agents_config['researcher']
         return Agent(
-            llm=self.get_llm(),
+            llm=self.llm,
             **{k: v for k, v in config.items() if k != 'llm'},
             verbose=True,
         )
@@ -41,7 +44,7 @@ class PersonalAIAssistantCrew():
     def reporting_analyst(self) -> Agent:
         config = self.agents_config['reporting_analyst']
         return Agent(
-            llm=self.get_llm(),
+            llm=self.llm,
             **{k: v for k, v in config.items() if k != 'llm'},
             verbose=True
         )

@@ -10,3 +10,5 @@ tiktoken==0.5.2
 setuptools
 pyyaml
 nest-asyncio==1.5.8
+sentence-transformers==2.2.2
+faiss-cpu==1.7.4
