@@ -4,19 +4,20 @@ import json
 from datetime import datetime
 import streamlit as st
 from dotenv import load_dotenv
+from langchain_google_genai import ChatGoogleGenerativeAI
+import google.generativeai as genai
 
 # --- Load environment variables ---
 load_dotenv()  # Loads .env from the current directory
 
-# If OPENAI_API_KEY is not set, use GEMINI_API_KEY instead.
-if not os.getenv("OPENAI_API_KEY"):
-    gemini_key = os.getenv("GEMINI_API_KEY")
-    if gemini_key:
-        os.environ["OPENAI_API_KEY"] = gemini_key
-        st.info("OPENAI_API_KEY set from GEMINI_API_KEY")
-    else:
-        st.error("No API key found. Please set GEMINI_API_KEY or OPENAI_API_KEY in your .env file.")
-        st.stop()
+# Configure Gemini
+if os.getenv("GEMINI_API_KEY"):
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+    os.environ["GOOGLE_API_KEY"] = os.getenv("GEMINI_API_KEY")
+    st.success("Gemini API configured successfully! 😊")
+else:
+    st.error("No API key found. Please set GEMINI_API_KEY in your .env file.")
+    st.stop()
 
 # Optional: Suppress specific warnings
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
@@ -28,13 +29,6 @@ except ImportError as e:
         st.error("Error importing pkg_resources. This might be due to a deployment issue. Please check your requirements.txt and ensure setuptools is installed.")
     else:
         st.error(f"Module not found: {e}. Ensure that 'crew.py' is inside the 'first' folder and __init__.py exists there. 🚫")
-    st.stop()
-
-# --- Import the PersonalAIAssistantCrew from the 'first' folder ---
-try:
-    from first.crew import PersonalAIAssistantCrew
-except ModuleNotFoundError as e:
-    st.error(f"Module not found: {e}. Ensure that 'crew.py' is inside the 'first' folder and __init__.py exists there. 🚫")
     st.stop()
 
 # --- Function to load personal data ---
