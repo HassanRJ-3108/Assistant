@@ -5,9 +5,6 @@ try:
 except ImportError as e:
     print(f"Error importing CrewAI: {e}")
     
-    
-    # You might want to add a fallback mechanism here
-
 @CrewBase
 class PersonalAIAssistantCrew():
     """Personal AI Assistant Crew for Hassan RJ"""
