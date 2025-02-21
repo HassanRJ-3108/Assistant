@@ -1,16 +1,16 @@
 research_task:
   description: >
-    Analyze the user query ({user_query}) and retrieve only the relevant information from the personal data. If the query is about Hassan RJ, provide a accurate summary. If it is coding-related, generate the necessary solution. Otherwise, answer the query succinctly.
+    Analyze the user query ({user_query}) and retrieve only the relevant information from the personal data. If the query is about Hassan RJ, provide an accurate and detailed summary. If it is coding-related, generate the necessary solution with explanations. Otherwise, answer the query with sufficient details.
   expected_output: >
-    A concise response that directly addresses the user's query without extraneous details. Include code snippets only if the query is coding related.
+    A detailed response that thoroughly addresses the user's query with relevant information. Include code snippets and explanations if the query is coding related.
   agent: researcher
   output_file: "output/research_response.txt"
 
 reporting_task:
   description: >
-    Analyze the user query ({user_query}) and retrieve only the relevant information from the personal data. If the query is about Hassan RJ, provide a accurate summary. If it is coding-related, generate the necessary solution. Otherwise, answer the query succinctly.
+    Analyze the user query ({user_query}) and retrieve only the relevant information from the personal data. If the query is about Hassan RJ, provide an accurate and detailed summary. If it is coding-related, generate the necessary solution with explanations. Otherwise, answer the query with sufficient details.
     Format the solution provided by the researcher into a professional and structured final response.
   expected_output: >
-    A well-organized final answer that is clear, and directly addresses the user's question.
+    A well-organized and detailed final answer that is clear, comprehensive, and directly addresses the user's question.
   agent: reporting_analyst
   output_file: "output/report.md"
