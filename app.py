@@ -8,15 +8,15 @@ from dotenv import load_dotenv
 # --- Load environment variables ---
 load_dotenv()  # Loads .env from the current directory
 
-# If OPENAI_API_KEY is not set, use GEMINI_API_KEY instead.
-if not os.getenv("OPENAI_API_KEY"):
-    gemini_key = os.getenv("GEMINI_API_KEY")
-    if gemini_key:
-        os.environ["OPENAI_API_KEY"] = gemini_key
-        st.info("OPENAI_API_KEY set from GEMINI_API_KEY")
-    else:
-        st.error("No API key found. Please set GEMINI_API_KEY or OPENAI_API_KEY in your .env file.")
-        st.stop()
+# Check for Gemini API Key
+gemini_key = os.getenv("GEMINI_API_KEY")
+if not gemini_key:
+    st.error("No API key found. Please set GEMINI_API_KEY in your .env file.")
+    st.stop()
+else:
+    # Set it directly as GEMINI_API_KEY
+    os.environ["GEMINI_API_KEY"] = gemini_key
+    st.success("Gemini API Key configured successfully! 😊")
 
 # Optional: Suppress specific warnings
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
@@ -28,13 +28,6 @@ except ImportError as e:
         st.error("Error importing pkg_resources. This might be due to a deployment issue. Please check your requirements.txt and ensure setuptools is installed.")
     else:
         st.error(f"Module not found: {e}. Ensure that 'crew.py' is inside the 'first' folder and __init__.py exists there. 🚫")
-    st.stop()
-
-# --- Import the PersonalAIAssistantCrew from the 'first' folder ---
-try:
-    from first.crew import PersonalAIAssistantCrew
-except ModuleNotFoundError as e:
-    st.error(f"Module not found: {e}. Ensure that 'crew.py' is inside the 'first' folder and __init__.py exists there. 🚫")
     st.stop()
 
 # --- Function to load personal data ---
@@ -65,18 +58,18 @@ def process_query(personal_data, user_query):
         return None
     
     # Initialize the crew and prepare inputs
-    crew = PersonalAIAssistantCrew().crew()
-    inputs = {
-        "topic": "Hassan RJ",
-        "current_year": str(datetime.now().year),
-        "personal_data": personal_data,
-        "user_query": user_query
-    }
     try:
+        crew = PersonalAIAssistantCrew().crew()
+        inputs = {
+            "topic": "Hassan RJ",
+            "current_year": str(datetime.now().year),
+            "personal_data": personal_data,
+            "user_query": user_query
+        }
         result = crew.kickoff(inputs=inputs)
         return result
     except Exception as e:
-        st.error(f"An error occurred while processing your query: {e} 🚫")
+        st.error(f"An error occurred while processing your query: {str(e)} 🚫")
         return None
 
 # --- Function to train the model ---
