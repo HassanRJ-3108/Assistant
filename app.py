@@ -4,7 +4,8 @@ import json
 from datetime import datetime
 import streamlit as st
 from dotenv import load_dotenv
-import sqlite3
+import pinecone
+from sentence_transformers import SentenceTransformer
 
 # --- Load environment variables ---
 load_dotenv()
@@ -18,6 +19,20 @@ else:
     st.error("No API key found. Please set GEMINI_API_KEY in your .env file.")
     st.stop()
 
+# Configure Pinecone
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+pinecone_environment = os.getenv("PINECONE_ENVIRONMENT")
+if not pinecone_api_key or not pinecone_environment:
+    st.error("Pinecone API key or environment not found. Please set PINECONE_API_KEY and PINECONE_ENVIRONMENT in your .env file.")
+    st.stop()
+
+# Initialize Pinecone
+pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
+index_name = "hassan-data"
+
+# Initialize the sentence transformer model
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
 # Optional: Suppress specific warnings
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
 
@@ -30,14 +45,6 @@ except ImportError as e:
         st.error(f"Module not found: {e}. Ensure that 'crew.py' is inside the 'first' folder and __init__.py exists there. 🚫")
     st.stop()
 
-def create_database():
-    conn = sqlite3.connect('hassan_data.db')
-    c = conn.cursor()
-    c.execute('''CREATE VIRTUAL TABLE IF NOT EXISTS hassan_info 
-                 USING fts5(content, tokenize='porter')''')
-    conn.commit()
-    conn.close()
-
 def load_and_index_personal_data(filename="first/knowledge/user_preference.txt"):
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,31 +52,35 @@ def load_and_index_personal_data(filename="first/knowledge/user_preference.txt")
         with open(file_path, "r", encoding="utf-8") as f:
             personal_data = f.read().strip()
         
-        # Create database and table if not exists
-        create_database()
+        # Split the data into sentences
+        sentences = personal_data.split('\n')
         
-        # Insert data into the database
-        conn = sqlite3.connect('hassan_data.db')
-        c = conn.cursor()
-        c.execute("DELETE FROM hassan_info")  # Clear existing data
-        for line in personal_data.split('\n'):
-            c.execute("INSERT INTO hassan_info (content) VALUES (?)", (line,))
-        conn.commit()
-        conn.close()
+        # Create Pinecone index if it doesn't exist
+        if index_name not in pinecone.list_indexes():
+            pinecone.create_index(index_name, dimension=384, metric="cosine")
         
-        st.success("Personal data loaded and indexed successfully! 😊")
+        # Get the index
+        index = pinecone.Index(index_name)
+        
+        # Clear existing data
+        index.delete(delete_all=True)
+        
+        # Encode and upsert data
+        for i, sentence in enumerate(sentences):
+            vector = model.encode(sentence).tolist()
+            index.upsert([(str(i), vector, {"text": sentence})])
+        
+        st.success(f"Personal data loaded and indexed successfully! 😊 {len(sentences)} sentences processed.")
         return personal_data
     except Exception as e:
         st.error(f"Error reading or indexing personal data: {e} 🚫")
         return None
 
 def search_personal_data(query):
-    conn = sqlite3.connect('hassan_data.db')
-    c = conn.cursor()
-    c.execute("SELECT content FROM hassan_info WHERE content MATCH ? ORDER BY rank LIMIT 5", (query,))
-    results = c.fetchall()
-    conn.close()
-    return [result[0] for result in results]
+    index = pinecone.Index(index_name)
+    query_vector = model.encode(query).tolist()
+    results = index.query(query_vector, top_k=5, include_metadata=True)
+    return [result['metadata']['text'] for result in results['matches']]
 
 def process_query(personal_data, user_query):
     if not personal_data:
