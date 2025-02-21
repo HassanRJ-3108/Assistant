@@ -1,15 +1,27 @@
 import os
+import asyncio
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from langchain_google_genai import ChatGoogleGenerativeAI
+import nest_asyncio
+
+# Apply nest_asyncio to handle event loop issues
+nest_asyncio.apply()
 
 @CrewBase
 class PersonalAIAssistantCrew():
     """Personal AI Assistant Crew for Hassan RJ"""
     config_path = "first/config/tasks.yaml"
 
+    def __init__(self):
+        super().__init__()
+        # Ensure event loop exists
+        try:
+            asyncio.get_event_loop()
+        except RuntimeError:
+            asyncio.set_event_loop(asyncio.new_event_loop())
+
     def get_llm(self):
-        """Get the Gemini language model"""
         return ChatGoogleGenerativeAI(
             model="gemini-pro",
             temperature=0.7,
@@ -20,7 +32,7 @@ class PersonalAIAssistantCrew():
     def researcher(self) -> Agent:
         config = self.agents_config['researcher']
         return Agent(
-            llm=self.get_llm(),  # Use Gemini model
+            llm=self.get_llm(),
             **{k: v for k, v in config.items() if k != 'llm'},
             verbose=True,
         )
@@ -29,7 +41,7 @@ class PersonalAIAssistantCrew():
     def reporting_analyst(self) -> Agent:
         config = self.agents_config['reporting_analyst']
         return Agent(
-            llm=self.get_llm(),  # Use Gemini model
+            llm=self.get_llm(),
             **{k: v for k, v in config.items() if k != 'llm'},
             verbose=True
         )
