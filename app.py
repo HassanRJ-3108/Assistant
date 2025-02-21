@@ -4,9 +4,11 @@ import json
 from datetime import datetime
 import streamlit as st
 from dotenv import load_dotenv
-from collections import Counter
-import re
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
+# --- Load environment variables ---
 load_dotenv()
 
 # Configure Gemini API Key
@@ -30,26 +32,6 @@ except ImportError as e:
         st.error(f"Module not found: {e}. Ensure that 'crew.py' is inside the 'first' folder and __init__.py exists there. 🚫")
     st.stop()
 
-
-def tokenize(text):
-    return re.findall(r'\w+', text.lower())
-
-def vectorize(text):
-    return Counter(tokenize(text))
-
-def cosine_similarity(vec1, vec2):
-    intersection = set(vec1.keys()) & set(vec2.keys())
-    numerator = sum([vec1[x] * vec2[x] for x in intersection])
-    
-    sum1 = sum([vec1[x]**2 for x in vec1.keys()])
-    sum2 = sum([vec2[x]**2 for x in vec2.keys()])
-    denominator = (sum1 * sum2)**0.5
-    
-    if not denominator:
-        return 0.0
-    else:
-        return float(numerator) / denominator
-
 def load_and_vectorize_personal_data(filename="first/knowledge/user_preference.txt"):
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -57,31 +39,34 @@ def load_and_vectorize_personal_data(filename="first/knowledge/user_preference.t
         with open(file_path, "r", encoding="utf-8") as f:
             personal_data = f.read().strip()
         
-        # Vectorize the personal data
+        # Split the data into sentences
         sentences = personal_data.split('\n')
-        vectorized_sentences = [vectorize(sentence) for sentence in sentences]
+        
+        # Vectorize the sentences using TF-IDF
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(sentences)
         
         st.success("Personal data loaded and vectorized successfully! 😊")
         st.write(f"Number of sentences vectorized: {len(sentences)}")
-        return personal_data, vectorized_sentences, sentences
+        return personal_data, vectorizer, tfidf_matrix, sentences
     except Exception as e:
         st.error(f"Error reading or vectorizing personal data: {e} 🚫")
-        return None, None, None
+        return None, None, None, None
 
-def process_query(personal_data, user_query, vectorized_sentences, sentences):
-    if not personal_data or not vectorized_sentences:
+def process_query(personal_data, user_query, vectorizer, tfidf_matrix, sentences):
+    if not personal_data or vectorizer is None or tfidf_matrix is None:
         st.error("Personal data or vectorization components are missing.")
         return None
     
     try:
         # Vectorize the user query
-        query_vector = vectorize(user_query)
+        query_vector = vectorizer.transform([user_query])
         
-        # Perform similarity search
-        similarities = [cosine_similarity(query_vector, sent_vector) for sent_vector in vectorized_sentences]
+        # Compute cosine similarities
+        cosine_similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()
         
         # Get top 5 most similar sentences
-        top_indices = sorted(range(len(similarities)), key=lambda i: similarities[i], reverse=True)[:5]
+        top_indices = cosine_similarities.argsort()[-5:][::-1]
         relevant_sentences = [sentences[i] for i in top_indices]
         relevant_context = "\n".join(relevant_sentences)
         
@@ -97,7 +82,7 @@ def process_query(personal_data, user_query, vectorized_sentences, sentences):
     except Exception as e:
         st.error(f"An error occurred while processing your query: {str(e)} 🚫")
         return None
-    
+
 def train_model():
     st.write("### Training Parameters 🚀")
     topic = st.text_input("Enter the training topic (e.g., 'Hassan RJ')", key="train_topic")
@@ -132,7 +117,6 @@ def train_model():
             st.success("Training completed successfully! 😊")
         except Exception as e:
             st.error(f"An error occurred while training the crew: {e} 🚫")
-    
 
 def main():
     st.title("Personal AI Assistant for Hassan RJ 🚀😊")
@@ -140,7 +124,7 @@ def main():
     st.sidebar.title("Navigation")
     app_mode = st.sidebar.selectbox("Choose the app mode", ["Ask Query", "Train Model"])
     
-    personal_data, vectorized_sentences, sentences = load_and_vectorize_personal_data()
+    personal_data, vectorizer, tfidf_matrix, sentences = load_and_vectorize_personal_data()
     
     if app_mode == "Ask Query":
         st.header("Ask a Question about Hassan RJ")
@@ -150,7 +134,7 @@ def main():
                 st.error("Please enter a question.")
             else:
                 with st.spinner("Processing query..."):
-                    result = process_query(personal_data, user_query, vectorized_sentences, sentences)
+                    result = process_query(personal_data, user_query, vectorizer, tfidf_matrix, sentences)
                 if result is not None:
                     st.subheader("AI Assistant's Response:")
                     try:
