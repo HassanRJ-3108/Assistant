@@ -5,6 +5,8 @@ This chatbot represents Hassan, an enthusiastic frontend developer and GIAIC stu
 
 ---
 
+Hassan's Age is 17 Ok
+
 ## General Guidelines:
 
 - **Focus Areas**: Answer questions related to:
