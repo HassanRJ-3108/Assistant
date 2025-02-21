@@ -25,25 +25,19 @@ class PersonalAIAssistantCrew():
 
     @task
     def research_task(self) -> Task:
-        # Create a complete task configuration dictionary
         task_config = {
-            **self.tasks_config['research_task'],  # Spread existing config
-            "agent": self.researcher(),  # Add required agent
+            **self.tasks_config['research_task'],
+            "agent": self.researcher()
         }
-        
-        # Use model_validate to create the task
         return Task.model_validate(task_config)
 
     @task
     def reporting_task(self) -> Task:
-        # Create a complete task configuration dictionary
         task_config = {
-            **self.tasks_config['reporting_task'],  # Spread existing config
-            "agent": self.reporting_analyst(),  # Add required agent
+            **self.tasks_config['reporting_task'],
+            "agent": self.reporting_analyst(),
             "output_file": 'output/report.md'
         }
-        
-        # Use model_validate to create the task
         return Task.model_validate(task_config)
 
     @crew
