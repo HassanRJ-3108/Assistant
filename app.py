@@ -64,24 +64,19 @@ def process_query(personal_data, user_query):
         st.error("Personal data is empty. Please update the file.")
         return None
     
+    # Initialize the crew and prepare inputs
+    crew = PersonalAIAssistantCrew().crew()
+    inputs = {
+        "topic": "Hassan RJ",
+        "current_year": str(datetime.now().year),
+        "personal_data": personal_data,
+        "user_query": user_query
+    }
     try:
-        # Initialize the crew and prepare inputs
-        crew = PersonalAIAssistantCrew().crew()
-        inputs = {
-            "topic": "Hassan RJ",
-            "current_year": str(datetime.now().year),
-            "personal_data": personal_data,
-            "user_query": user_query
-        }
-        
-        # Log the inputs for debugging
-        st.write("Debug: Inputs prepared", inputs)
-        
         result = crew.kickoff(inputs=inputs)
         return result
     except Exception as e:
-        st.error(f"An error occurred while processing your query: {str(e)} 🚫")
-        st.write("Debug: Full error", repr(e))
+        st.error(f"An error occurred while processing your query: {e} 🚫")
         return None
 
 # --- Function to train the model ---
