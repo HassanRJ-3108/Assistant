@@ -6,12 +6,6 @@ import streamlit as st
 from dotenv import load_dotenv
 from pydantic import ValidationError
 
-import sys
-import subprocess
-
-subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "setuptools"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "wheel"])
 
 # --- Load environment variables ---
 load_dotenv()  # Loads .env from the current directory
