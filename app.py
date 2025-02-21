@@ -4,10 +4,9 @@ import json
 from datetime import datetime
 import streamlit as st
 from dotenv import load_dotenv
-import pinecone
-from sentence_transformers import SentenceTransformer
+from collections import Counter
+import re
 
-# --- Load environment variables ---
 load_dotenv()
 
 # Configure Gemini API Key
@@ -18,20 +17,6 @@ if gemini_key:
 else:
     st.error("No API key found. Please set GEMINI_API_KEY in your .env file.")
     st.stop()
-
-# Configure Pinecone
-pinecone_api_key = os.getenv("PINECONE_API_KEY")
-pinecone_environment = os.getenv("PINECONE_ENVIRONMENT")
-if not pinecone_api_key or not pinecone_environment:
-    st.error("Pinecone API key or environment not found. Please set PINECONE_API_KEY and PINECONE_ENVIRONMENT in your .env file.")
-    st.stop()
-
-# Initialize Pinecone
-pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
-index_name = "hassan-data"
-
-# Initialize the sentence transformer model
-model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Optional: Suppress specific warnings
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
@@ -45,52 +30,60 @@ except ImportError as e:
         st.error(f"Module not found: {e}. Ensure that 'crew.py' is inside the 'first' folder and __init__.py exists there. 🚫")
     st.stop()
 
-def load_and_index_personal_data(filename="first/knowledge/user_preference.txt"):
+
+def tokenize(text):
+    return re.findall(r'\w+', text.lower())
+
+def vectorize(text):
+    return Counter(tokenize(text))
+
+def cosine_similarity(vec1, vec2):
+    intersection = set(vec1.keys()) & set(vec2.keys())
+    numerator = sum([vec1[x] * vec2[x] for x in intersection])
+    
+    sum1 = sum([vec1[x]**2 for x in vec1.keys()])
+    sum2 = sum([vec2[x]**2 for x in vec2.keys()])
+    denominator = (sum1 * sum2)**0.5
+    
+    if not denominator:
+        return 0.0
+    else:
+        return float(numerator) / denominator
+
+def load_and_vectorize_personal_data(filename="first/knowledge/user_preference.txt"):
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(base_dir, filename)
         with open(file_path, "r", encoding="utf-8") as f:
             personal_data = f.read().strip()
         
-        # Split the data into sentences
+        # Vectorize the personal data
         sentences = personal_data.split('\n')
+        vectorized_sentences = [vectorize(sentence) for sentence in sentences]
         
-        # Create Pinecone index if it doesn't exist
-        if index_name not in pinecone.list_indexes():
-            pinecone.create_index(index_name, dimension=384, metric="cosine")
-        
-        # Get the index
-        index = pinecone.Index(index_name)
-        
-        # Clear existing data
-        index.delete(delete_all=True)
-        
-        # Encode and upsert data
-        for i, sentence in enumerate(sentences):
-            vector = model.encode(sentence).tolist()
-            index.upsert([(str(i), vector, {"text": sentence})])
-        
-        st.success(f"Personal data loaded and indexed successfully! 😊 {len(sentences)} sentences processed.")
-        return personal_data
+        st.success("Personal data loaded and vectorized successfully! 😊")
+        st.write(f"Number of sentences vectorized: {len(sentences)}")
+        return personal_data, vectorized_sentences, sentences
     except Exception as e:
-        st.error(f"Error reading or indexing personal data: {e} 🚫")
-        return None
+        st.error(f"Error reading or vectorizing personal data: {e} 🚫")
+        return None, None, None
 
-def search_personal_data(query):
-    index = pinecone.Index(index_name)
-    query_vector = model.encode(query).tolist()
-    results = index.query(query_vector, top_k=5, include_metadata=True)
-    return [result['metadata']['text'] for result in results['matches']]
-
-def process_query(personal_data, user_query):
-    if not personal_data:
-        st.error("Personal data is empty. Please update the file.")
+def process_query(personal_data, user_query, vectorized_sentences, sentences):
+    if not personal_data or not vectorized_sentences:
+        st.error("Personal data or vectorization components are missing.")
         return None
     
     try:
-        # Search for relevant information
-        relevant_info = search_personal_data(user_query)
-        relevant_context = "\n".join(relevant_info)
+        # Vectorize the user query
+        query_vector = vectorize(user_query)
+        
+        # Perform similarity search
+        similarities = [cosine_similarity(query_vector, sent_vector) for sent_vector in vectorized_sentences]
+        
+        # Get top 5 most similar sentences
+        top_indices = sorted(range(len(similarities)), key=lambda i: similarities[i], reverse=True)[:5]
+        relevant_sentences = [sentences[i] for i in top_indices]
+        relevant_context = "\n".join(relevant_sentences)
         
         crew = PersonalAIAssistantCrew().crew()
         inputs = {
@@ -104,7 +97,7 @@ def process_query(personal_data, user_query):
     except Exception as e:
         st.error(f"An error occurred while processing your query: {str(e)} 🚫")
         return None
-
+    
 def train_model():
     st.write("### Training Parameters 🚀")
     topic = st.text_input("Enter the training topic (e.g., 'Hassan RJ')", key="train_topic")
@@ -139,6 +132,7 @@ def train_model():
             st.success("Training completed successfully! 😊")
         except Exception as e:
             st.error(f"An error occurred while training the crew: {e} 🚫")
+    
 
 def main():
     st.title("Personal AI Assistant for Hassan RJ 🚀😊")
@@ -146,7 +140,7 @@ def main():
     st.sidebar.title("Navigation")
     app_mode = st.sidebar.selectbox("Choose the app mode", ["Ask Query", "Train Model"])
     
-    personal_data = load_and_index_personal_data()
+    personal_data, vectorized_sentences, sentences = load_and_vectorize_personal_data()
     
     if app_mode == "Ask Query":
         st.header("Ask a Question about Hassan RJ")
@@ -156,7 +150,7 @@ def main():
                 st.error("Please enter a question.")
             else:
                 with st.spinner("Processing query..."):
-                    result = process_query(personal_data, user_query)
+                    result = process_query(personal_data, user_query, vectorized_sentences, sentences)
                 if result is not None:
                     st.subheader("AI Assistant's Response:")
                     try:
