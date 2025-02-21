@@ -2,7 +2,7 @@ research_task:
   description: >
     Analyze the user query ({user_query}) and retrieve only the relevant information from the personal data. If the query is about Hassan RJ (e.g., skills, education, projects, work experience), provide an accurate and extremely detailed summary that includes every aspect of the provided personal data. If the query is coding-related, generate the necessary solution with well-commented code snippets and an in-depth step-by-step explanation. For general queries, ensure your response is extremely detailed, aiming for a minimum of 100 lines of explanation that thoroughly covers the subject.
   expected_output: >
-    A detailed and comprehensive response that thoroughly addresses the user's query with all relevant information from the personal data, including code snippets and extensive explanations where necessary. The response should be structured, clear, and formatted using markdown.
+    A detailed and comprehensive response that thoroughly addresses the user's query with all relevant information from the personal data, including code snippets and extensive explanations where necessary. The response should be structured, clear, and formatted using markdown
   agent: researcher
   output_file: "output/research_response.txt"
 
