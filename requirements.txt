@@ -1,11 +1,11 @@
 streamlit==1.42.1
 python-dotenv==1.0.1
-crewai==0.11.0
-langchain==0.1.0
-openai==1.7.1
+crewai>=0.11.0
+langchain>=0.1.0
+openai>=1.7.1
 chromadb==0.3.26
 pysqlite3-binary==0.5.4
 tiktoken==0.5.2
 setuptools
 pyyaml
-pydantic==1.10.12
+pydantic
